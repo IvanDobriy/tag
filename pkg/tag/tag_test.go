@@ -1,17 +1,17 @@
 package tag
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/IvanDobriy/tag/pkg/tag/cast"
 	"github.com/stretchr/testify/assert"
 )
 
+var tagError *TagError
 
-func TestGetRequiredTagPositive(t * testing.T) {
+func TestGetRequiredTagPositive(t *testing.T) {
 	assertions := assert.New(t)
-	raw := map[string]any {
+	raw := map[string]any{
 		"age": 12,
 	}
 	age, err := GetRequired("age", raw, func(value any) (*int64, error) {
@@ -22,9 +22,9 @@ func TestGetRequiredTagPositive(t * testing.T) {
 	assertions.Nil(err)
 }
 
-func TestGetRequiredTageEntityNotFound(t *testing.T){
+func TestGetRequiredTagEntityNotFound(t *testing.T) {
 	assertions := assert.New(t)
-	raw := map[string]any {}
+	raw := map[string]any{}
 	age, err := GetRequired("age", raw, func(value any) (*int64, error) {
 		r, e := cast.ToInt64E(value)
 		return &r, e
@@ -32,8 +32,58 @@ func TestGetRequiredTageEntityNotFound(t *testing.T){
 	assertions.Nil(age)
 	assertions.NotNil(err)
 
-	var tagError *TagError
-	r := errors.As(tagError, err)
-	assertions.True(r, "must be true ---- ")
-	assertions.ErrorAs(tagError, err)
+	assertions.ErrorAs(err, &tagError)
+}
+
+func TestGetRequiredTagEntityConversionError(t *testing.T) {
+	assertions := assert.New(t)
+	raw := map[string]any{
+		"age": "hello, world",
+	}
+	age, err := GetRequired("age", raw, func(value any) (*int64, error) {
+		r, e := cast.ToInt64E(value)
+		return &r, e
+	})
+
+	assertions.Nil(age)
+	assertions.NotNil(err)
+	assertions.ErrorAs(err, &tagError)
+}
+
+func TestGetTagPositve(t *testing.T) {
+	assertions := assert.New(t)
+	raw := map[string]any{
+		"age": 12,
+	}
+	age, err := Get("age", raw, func(value any) (*int64, error) {
+		r, e := cast.ToInt64E(value)
+		return &r, e
+	})
+	assertions.Nil(err)
+	assertions.Equal(int64(12), *age)
+}
+
+func TestGetTagEntityNotFound(t *testing.T) {
+	assertions := assert.New(t)
+	raw := map[string]any{}
+	age, err := Get("age", raw, func(value any) (*int64, error){
+		r, e := cast.ToInt64E(value)
+		return &r, e
+	})
+	assertions.Nil(err)
+	assertions.Nil(age)
+}
+
+func TestGetTagEntityConversionError(t *testing.T){
+	assertions := assert.New(t)
+	raw := map[string]any{
+		"age": "hello, world",
+	}
+	age, err := Get("age", raw, func(value any) (*int64, error) {
+		r, e := cast.ToInt64E(value)
+		return &r, e
+	})
+	assertions.Nil(age)
+	assertions.NotNil(err)
+	assertions.ErrorAs(err, &tagError)
 }
